@@ -1,6 +1,7 @@
 import 'package:accountable/backend/app_state.dart';
 import 'package:accountable/presentation/pages/addTransaction.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart' show CircleAvatar;
 import 'package:intl/intl.dart'; // Import for date formatting
 
 class TransactionDetailScreen extends StatelessWidget {
@@ -13,20 +14,20 @@ class TransactionDetailScreen extends StatelessWidget {
   IconData _getIconForType(TransactionType type) {
     switch (type) {
       case TransactionType.food:
-        return Icons.restaurant;
+        return CupertinoIcons.cart;
       case TransactionType.personal:
-        return Icons.person;
+        return CupertinoIcons.person;
       case TransactionType.utility:
-        return Icons.lightbulb;
+        return CupertinoIcons.lightbulb;
       case TransactionType.transportation:
-        return Icons.directions_bus;
+        return CupertinoIcons.bus;
       case TransactionType.health:
-        return Icons.local_hospital;
+        return CupertinoIcons.bandage;
       case TransactionType.leisure:
-        return Icons.movie;
+        return CupertinoIcons.film;
       case TransactionType.other:
       default:
-        return Icons.category;
+        return CupertinoIcons.square_grid_2x2;
     }
   }
 
@@ -40,69 +41,97 @@ class TransactionDetailScreen extends StatelessWidget {
     final formattedDate = DateFormat('EEE dd MMM yy')
         .format(transaction.transactionDate); // Format the date
 
-    return Scaffold(
-      backgroundColor: Colors.blueGrey.shade900,
-      appBar: AppBar(
-        backgroundColor: Colors.blue.shade200,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text('Transaction Detail',
-            style: TextStyle(color: Colors.white)),
+    return CupertinoPageScaffold(
+      backgroundColor: CupertinoColors.systemGrey6,
+      navigationBar: CupertinoNavigationBar(
+        previousPageTitle: 'Back',
+        middle: const Text('Transaction Detail'),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              formattedDate, // Use formatted date
-              style: const TextStyle(color: Colors.white70, fontSize: 16),
-            ),
-            const SizedBox(height: 10),
-            Container(
-              padding: const EdgeInsets.all(16.0),
-              decoration: BoxDecoration(
-                color: Colors.blueGrey.shade700,
-                borderRadius: BorderRadius.circular(10),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                formattedDate, // Use formatted date
+                style: const TextStyle(
+                    color: CupertinoColors.systemGrey, fontSize: 16),
               ),
-              child: Row(
-                // Changed from const Row
-                children: [
-                  const Icon(Icons.arrow_upward,
-                      color: Colors.red), // Assuming all are expenses for now
-                  const SizedBox(width: 8),
-                  Text(
-                      transaction.amount
-                          .toStringAsFixed(2), // Use transaction amount
-                      style:
-                          const TextStyle(color: Colors.white, fontSize: 20)),
-                ],
-              ),
-            ),
-            const SizedBox(height: 10),
-            _buildInfoTile(
-                _getIconForType(transaction.transType),
-                _getStringForType(transaction.transType),
-                context), // Use transaction type icon and string
-            const SizedBox(height: 10),
-            _buildInfoTile(Icons.edit, transaction.transName,
-                context), // Use transaction name/notes
-            const SizedBox(height: 20),
-            _buildSlipInfo(), // Keep slip info for now, might need adjustment later
-            const Spacer(),
-            Center(
-              child: TextButton(
-                onPressed: () {},
-                child: const Text(
-                  'Delete',
-                  style: TextStyle(color: Colors.red, fontSize: 18),
+              const SizedBox(height: 10),
+              Container(
+                padding: const EdgeInsets.all(16.0),
+                decoration: BoxDecoration(
+                  color: CupertinoColors.systemIndigo.withOpacity(0.8),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(CupertinoIcons.arrow_up,
+                        color: CupertinoColors
+                            .systemRed), // Assuming all are expenses for now
+                    const SizedBox(width: 8),
+                    Text(
+                        transaction.amount
+                            .toStringAsFixed(2), // Use transaction amount
+                        style: const TextStyle(
+                            color: CupertinoColors.white, fontSize: 20)),
+                  ],
                 ),
               ),
-            )
-          ],
+              const SizedBox(height: 10),
+              _buildInfoTile(
+                  _getIconForType(transaction.transType),
+                  _getStringForType(transaction.transType),
+                  context), // Use transaction type icon and string
+              const SizedBox(height: 10),
+              _buildInfoTile(CupertinoIcons.pencil, transaction.transName,
+                  context), // Use transaction name/notes
+              const SizedBox(height: 20),
+              _buildSlipInfo(), // Keep slip info for now, might need adjustment later
+              const Spacer(),
+              Center(
+                child: CupertinoButton(
+                  onPressed: () {
+                    _showDeleteConfirmation(context);
+                  },
+                  child: const Text(
+                    'Delete',
+                    style: TextStyle(
+                        color: CupertinoColors.systemRed, fontSize: 18),
+                  ),
+                ),
+              )
+            ],
+          ),
         ),
+      ),
+    );
+  }
+
+  void _showDeleteConfirmation(BuildContext context) {
+    showCupertinoDialog(
+      context: context,
+      builder: (BuildContext context) => CupertinoAlertDialog(
+        title: const Text('Delete Transaction'),
+        content:
+            const Text('Are you sure you want to delete this transaction?'),
+        actions: <CupertinoDialogAction>[
+          CupertinoDialogAction(
+            isDestructiveAction: true,
+            onPressed: () {
+              // TODO: Implement delete functionality
+              Navigator.pop(context);
+              Navigator.pop(context);
+            },
+            child: const Text('Delete'),
+          ),
+          CupertinoDialogAction(
+            isDefaultAction: true,
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+        ],
       ),
     );
   }
@@ -111,31 +140,34 @@ class TransactionDetailScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16.0),
       decoration: BoxDecoration(
-        color: Colors.blueGrey.shade600,
+        color: CupertinoColors.systemIndigo.withOpacity(0.6),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
         children: [
-          Icon(icon, color: Colors.white),
+          Icon(icon, color: CupertinoColors.white),
           const SizedBox(width: 8),
           Expanded(
             // Wrap Text in Expanded to prevent overflow and allow alignment
             child: Text(text,
-                style: const TextStyle(color: Colors.white, fontSize: 16)),
+                style: const TextStyle(
+                    color: CupertinoColors.white, fontSize: 16)),
           ),
           Align(
             // Keep Align for the edit button
             alignment: Alignment.centerRight,
-            child: IconButton(
-              icon: const Icon(Icons.edit, color: Colors.white),
+            child: CupertinoButton(
+              padding: EdgeInsets.zero,
+              child: const Icon(CupertinoIcons.pencil,
+                  color: CupertinoColors.white),
               onPressed: () {
-                // TODO: Pass transaction data to edit screen
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) =>
-                            const AddTransaction()) // Pass transaction later
-                    );
+                // Use proper Cupertino navigation
+                Navigator.of(context, rootNavigator: true)
+                    .push(CupertinoPageRoute(
+                        builder: (context) => AddTransaction(
+                              initialAmount: transaction.amount.toString(),
+                              initialNotes: transaction.transName,
+                            )));
               },
             ),
           )
@@ -148,45 +180,48 @@ class TransactionDetailScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16.0),
       decoration: BoxDecoration(
-        color: Colors.blueGrey.shade800,
+        color: CupertinoColors.systemIndigo.withOpacity(0.4),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text('Slip Info',
-              style: TextStyle(color: Colors.white, fontSize: 16)),
+              style: TextStyle(color: CupertinoColors.white, fontSize: 16)),
           const SizedBox(height: 10),
           Row(
             children: [
               CircleAvatar(
-                backgroundColor: Colors.white,
-                child: Icon(Icons.person, color: Colors.blueGrey.shade900),
+                backgroundColor: CupertinoColors.white,
+                child: Icon(CupertinoIcons.person,
+                    color: CupertinoColors.systemIndigo),
               ),
               const SizedBox(width: 8),
               Column(
-                // Changed from const Column
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('You', // Keep placeholder for now
-                      style: TextStyle(color: Colors.white, fontSize: 14)),
-                  const Text('นายประยุทธ์ น.', // Keep placeholder for now
-                      style: TextStyle(color: Colors.white70, fontSize: 12)),
+                  const Text('You',
+                      style: TextStyle(
+                          color: CupertinoColors.white, fontSize: 14)),
+                  const Text('นายประยุทธ์ น.',
+                      style: TextStyle(
+                          color: CupertinoColors.systemGrey, fontSize: 12)),
                   Text(
-                      DateFormat('EEE dd MMM yy HH:mm').format(transaction
-                          .transactionDate), // Use transaction date/time
-                      style:
-                          const TextStyle(color: Colors.white54, fontSize: 12)),
+                      DateFormat('EEE dd MMM yy HH:mm')
+                          .format(transaction.transactionDate),
+                      style: const TextStyle(
+                          color: CupertinoColors.systemGrey2, fontSize: 12)),
                 ],
               ),
               const Spacer(),
               Container(
                 width: 50,
                 height: 50,
-                color: Colors.grey.shade400,
+                color: CupertinoColors.systemGrey3,
                 child: const Center(
                   child: Text('Slip',
-                      style: TextStyle(color: Colors.black, fontSize: 14)),
+                      style: TextStyle(
+                          color: CupertinoColors.black, fontSize: 14)),
                 ),
               )
             ],

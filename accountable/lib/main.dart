@@ -1,7 +1,6 @@
 import 'package:accountable/backend/app_state.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
-import 'package:go_router/go_router.dart';
 
 // Firebase Imports
 import 'package:firebase_core/firebase_core.dart';
@@ -10,80 +9,7 @@ import 'firebase_options.dart';
 import 'package:accountable/presentation/pages/home_page.dart';
 import 'package:accountable/presentation/pages/file_upload_screen.dart';
 import 'package:accountable/presentation/pages/summary_screen.dart';
-import 'package:accountable/presentation/pages/transaction_details_screen.dart';
 import 'package:provider/provider.dart';
-
-// --- Global Navigator Keys ---
-final _rootNavigatorKey = GlobalKey<NavigatorState>();
-final _shellNavigatorHomePageKey =
-    GlobalKey<NavigatorState>(debugLabel: 'HomePage');
-final _shellNavigatorNewPageKey =
-    GlobalKey<NavigatorState>(debugLabel: 'NewPage');
-final _shellNavigatorSummaryPageKey =
-    GlobalKey<NavigatorState>(debugLabel: 'SummaryPage');
-
-// --- App Router Setup ---
-final GoRouter goRouter = GoRouter(
-  initialLocation: '/HomePage',
-  navigatorKey: _rootNavigatorKey,
-  debugLogDiagnostics: true,
-  routes: [
-    StatefulShellRoute.indexedStack(
-      builder: (context, state, navigationShell) {
-        return ScaffoldWithNestedNavigation(navigationShell: navigationShell);
-      },
-      branches: [
-        // --- Home Page Branch ---
-        StatefulShellBranch(
-          navigatorKey: _shellNavigatorHomePageKey,
-          routes: [
-            GoRoute(
-              path: '/HomePage',
-              pageBuilder: (context, state) => const NoTransitionPage(
-                child: HomePage(detailsPath: '/HomePage/transaction_details'),
-              ),
-              routes: [
-                GoRoute(
-                  path: 'transaction_details',
-                  builder: (context, state) {
-                    final transaction = state.extra as Trans;
-                    return TransactionDetailScreen(transaction: transaction);
-                  },
-                ),
-              ],
-            ),
-          ],
-        ),
-
-        // --- Upload Page Branch ---
-        StatefulShellBranch(
-          navigatorKey: _shellNavigatorNewPageKey,
-          routes: [
-            GoRoute(
-              path: '/UploadPage',
-              pageBuilder: (context, state) => const NoTransitionPage(
-                child: FileUploadScreen(),
-              ),
-            ),
-          ],
-        ),
-
-        // --- Summary Page Branch ---
-        StatefulShellBranch(
-          navigatorKey: _shellNavigatorSummaryPageKey,
-          routes: [
-            GoRoute(
-              path: '/SummaryPage',
-              pageBuilder: (context, state) => const NoTransitionPage(
-                child: BudgetSummaryScreen(),
-              ),
-            ),
-          ],
-        ),
-      ],
-    ),
-  ],
-);
 
 void main() async {
   usePathUrlStrategy(); // clean URLs on web
@@ -105,7 +31,7 @@ void main() async {
           create: (context) => AppState(),
         ),
       ],
-      child: const MyApp(), // still the same widget
+      child: const MyApp(),
     ),
   );
 }
@@ -116,66 +42,111 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      routerConfig: goRouter,
+    return CupertinoApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(primarySwatch: Colors.indigo),
+      theme: const CupertinoThemeData(
+        primaryColor: CupertinoColors.systemIndigo,
+        brightness: Brightness.light,
+      ),
+      home: const MainSegmentedControl(),
     );
   }
 }
 
-// --- Nested Navigation Scaffold ---
-class ScaffoldWithNestedNavigation extends StatelessWidget {
-  const ScaffoldWithNestedNavigation({
-    Key? key,
-    required this.navigationShell,
-  }) : super(key: key ?? const ValueKey('ScaffoldWithNestedNavigation'));
-
-  final StatefulNavigationShell navigationShell;
-
-  void _goBranch(int index) {
-    navigationShell.goBranch(
-      index,
-      initialLocation: index == navigationShell.currentIndex,
-    );
-  }
+class MainSegmentedControl extends StatefulWidget {
+  const MainSegmentedControl({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return ScaffoldWithNavigationBar(
-      body: navigationShell,
-      selectedIndex: navigationShell.currentIndex,
-      onDestinationSelected: _goBranch,
-    );
-  }
+  State<MainSegmentedControl> createState() => _MainSegmentedControlState();
 }
 
-// --- Bottom Navigation Scaffold ---
-class ScaffoldWithNavigationBar extends StatelessWidget {
-  const ScaffoldWithNavigationBar({
-    super.key,
-    required this.body,
-    required this.selectedIndex,
-    required this.onDestinationSelected,
-  });
+class _MainSegmentedControlState extends State<MainSegmentedControl> {
+  int _selectedIndex = 0;
 
-  final Widget body;
-  final int selectedIndex;
-  final ValueChanged<int> onDestinationSelected;
+  final Map<int, Widget> children = const {
+    0: Padding(
+      padding: EdgeInsets.symmetric(horizontal: 20),
+      child: Text(
+        'Home',
+        style: TextStyle(fontWeight: FontWeight.bold),
+      ),
+    ),
+    1: Padding(
+      padding: EdgeInsets.symmetric(horizontal: 20),
+      child: Text(
+        'New',
+        style: TextStyle(fontWeight: FontWeight.bold),
+      ),
+    ),
+    2: Padding(
+      padding: EdgeInsets.symmetric(horizontal: 20),
+      child: Text(
+        'Summary',
+        style: TextStyle(fontWeight: FontWeight.bold),
+      ),
+    ),
+  };
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: body,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: selectedIndex,
-        onDestinationSelected: onDestinationSelected,
-        destinations: const [
-          NavigationDestination(label: 'Home', icon: Icon(Icons.home)),
-          NavigationDestination(label: 'New', icon: Icon(Icons.add)),
-          NavigationDestination(label: 'Summary', icon: Icon(Icons.add_chart)),
-        ],
+    return CupertinoPageScaffold(
+      backgroundColor: CupertinoColors.systemGrey6,
+      navigationBar: CupertinoNavigationBar(
+        backgroundColor: CupertinoColors.systemIndigo.withOpacity(0.1),
+        border: null,
+        middle: CupertinoSlidingSegmentedControl<int>(
+          groupValue: _selectedIndex,
+          onValueChanged: (value) {
+            setState(() {
+              _selectedIndex = value!;
+            });
+          },
+          thumbColor: CupertinoColors.systemIndigo.withOpacity(0.8),
+          backgroundColor: CupertinoColors.systemBackground,
+          children: children,
+        ),
+        trailing: _selectedIndex == 0
+            ? CupertinoButton(
+                padding: EdgeInsets.zero,
+                child: const Icon(
+                  CupertinoIcons.add,
+                  color: CupertinoColors.systemIndigo,
+                ),
+                onPressed: () {
+                  Navigator.of(context, rootNavigator: true).push(
+                    CupertinoPageRoute(
+                      builder: (context) => const FileUploadScreen(),
+                    ),
+                  );
+                },
+              )
+            : null,
+      ),
+      child: SafeArea(
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 300),
+          child: _buildPage(_selectedIndex),
+          transitionBuilder: (Widget child, Animation<double> animation) {
+            return FadeTransition(
+              opacity: animation,
+              child: child,
+            );
+          },
+        ),
       ),
     );
+  }
+
+  Widget _buildPage(int index) {
+    switch (index) {
+      case 0:
+        return const HomePage(detailsPath: '/transaction_details');
+      case 1:
+        return const FileUploadScreen();
+      case 2:
+        return const BudgetSummaryScreen();
+      default:
+        return const HomePage(detailsPath: '/transaction_details');
+    }
   }
 }

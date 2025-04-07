@@ -1,5 +1,5 @@
 import 'package:accountable/backend/app_state.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 
 class AddTransaction extends StatefulWidget {
@@ -44,6 +44,9 @@ class _AddTransactionState extends State<AddTransaction> {
       // Attempt to automatically generate the category based on notes
       _autoGenerateCategory(widget.initialNotes!);
     }
+
+    // Initialize date to today
+    selectedDate = DateTime.now();
   }
 
   // Helper function to call generateCategory asynchronously
@@ -77,27 +80,25 @@ class _AddTransactionState extends State<AddTransaction> {
   }
 
   void _showCategoryDialog() {
-    showDialog(
+    showCupertinoModalPopup(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
+        return CupertinoActionSheet(
           title: const Text('Select Category'),
-          content: SingleChildScrollView(
-            child: Column(
-              children: categories
-                  .map((category) => RadioListTile<String>(
-                        title: Text(category),
-                        value: category,
-                        groupValue: selectedCategory,
-                        onChanged: (value) {
-                          setState(() {
-                            selectedCategory = value;
-                          });
-                          Navigator.pop(context);
-                        },
-                      ))
-                  .toList(),
-            ),
+          actions: categories.map((category) {
+            return CupertinoActionSheetAction(
+              onPressed: () {
+                setState(() {
+                  selectedCategory = category;
+                });
+                Navigator.pop(context);
+              },
+              child: Text(category),
+            );
+          }).toList(),
+          cancelButton: CupertinoActionSheetAction(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
           ),
         );
       },
@@ -105,189 +106,215 @@ class _AddTransactionState extends State<AddTransaction> {
   }
 
   void _showTransactionTypeDialog() {
-    showDialog(
+    showCupertinoModalPopup(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
+        return CupertinoActionSheet(
           title: const Text('Select Transaction Type'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: ['Deposit', 'Withdraw']
-                .map((type) => RadioListTile<String>(
-                      title: Text(type),
-                      value: type,
-                      groupValue: transactionType,
-                      onChanged: (value) {
-                        setState(() {
-                          transactionType = value!;
-                        });
-                        Navigator.pop(context);
-                      },
-                    ))
-                .toList(),
+          actions: ['Deposit', 'Withdraw'].map((type) {
+            return CupertinoActionSheetAction(
+              onPressed: () {
+                setState(() {
+                  transactionType = type;
+                });
+                Navigator.pop(context);
+              },
+              child: Text(type),
+            );
+          }).toList(),
+          cancelButton: CupertinoActionSheetAction(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
           ),
         );
       },
     );
   }
 
-  Future<void> _selectDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
+  void _showDatePicker(BuildContext context) {
+    showCupertinoModalPopup(
       context: context,
-      initialDate: selectedDate ?? DateTime.now(),
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2100),
+      builder: (BuildContext context) {
+        return SizedBox(
+          height: 300,
+          child: CupertinoDatePicker(
+            mode: CupertinoDatePickerMode.date,
+            initialDateTime: selectedDate ?? DateTime.now(),
+            onDateTimeChanged: (DateTime newDate) {
+              setState(() {
+                selectedDate = newDate;
+              });
+            },
+          ),
+        );
+      },
     );
-    if (picked != null && picked != selectedDate) {
-      setState(() {
-        selectedDate = picked;
-      });
-    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.blueGrey.shade900,
-      appBar: AppBar(
-        backgroundColor: Colors.blue.shade200,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text('Add Transaction',
-            style: TextStyle(color: Colors.white)),
+    return CupertinoPageScaffold(
+      backgroundColor: CupertinoColors.systemBackground,
+      navigationBar: CupertinoNavigationBar(
+        previousPageTitle: 'Back',
+        middle: const Text('Add Transaction'),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Amount',
-                style: TextStyle(color: Colors.white70, fontSize: 16)),
-            TextField(
-              controller: amountController,
-              style: const TextStyle(color: Colors.white),
-              decoration: const InputDecoration(
-                suffixText: 'THB',
-                suffixStyle: TextStyle(color: Colors.white),
-                enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.white70),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Amount',
+                  style: TextStyle(
+                      fontSize: 16, color: CupertinoColors.systemGrey)),
+              CupertinoTextField(
+                controller: amountController,
+                placeholder: 'Enter amount',
+                suffix: const Padding(
+                  padding: EdgeInsets.only(right: 8.0),
+                  child: Text('THB'),
                 ),
               ),
-            ),
-            const SizedBox(height: 10),
-            const Text('Date',
-                style: TextStyle(color: Colors.white70, fontSize: 16)),
-            GestureDetector(
-              onTap: () => _selectDate(context),
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 12.0),
-                decoration: const BoxDecoration(
-                  border: Border(bottom: BorderSide(color: Colors.white70)),
-                ),
-                child: Text(
-                  selectedDate == null
-                      ? 'Select Date'
-                      : '${selectedDate!.toLocal()}'.split(' ')[0],
-                  style: const TextStyle(color: Colors.white),
+              const SizedBox(height: 20),
+              const Text('Date',
+                  style: TextStyle(
+                      fontSize: 16, color: CupertinoColors.systemGrey)),
+              GestureDetector(
+                onTap: () => _showDatePicker(context),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 12.0),
+                  decoration: const BoxDecoration(
+                    border: Border(
+                        bottom: BorderSide(color: CupertinoColors.systemGrey3)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        selectedDate == null
+                            ? 'Select Date'
+                            : '${selectedDate!.toLocal()}'.split(' ')[0],
+                      ),
+                      const Icon(CupertinoIcons.calendar,
+                          color: CupertinoColors.systemGrey),
+                    ],
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 10),
-            const Text('Notes',
-                style: TextStyle(color: Colors.white70, fontSize: 16)),
-            TextField(
-              controller: notesController,
-              style: const TextStyle(color: Colors.white),
-              decoration: const InputDecoration(
-                enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.white70),
+              const SizedBox(height: 20),
+              const Text('Notes',
+                  style: TextStyle(
+                      fontSize: 16, color: CupertinoColors.systemGrey)),
+              CupertinoTextField(
+                controller: notesController,
+                placeholder: 'Enter notes',
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+              const SizedBox(height: 20),
+              const Text('Category',
+                  style: TextStyle(
+                      fontSize: 16, color: CupertinoColors.systemGrey)),
+              GestureDetector(
+                onTap: () => _showCategoryDialog(),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 12.0),
+                  decoration: const BoxDecoration(
+                    border: Border(
+                        bottom: BorderSide(color: CupertinoColors.systemGrey3)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(selectedCategory ?? 'Select Category'),
+                      const Icon(CupertinoIcons.chevron_down,
+                          color: CupertinoColors.systemGrey),
+                    ],
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 20),
-            Row(
-              children: [
-                ElevatedButton(
-                  onPressed: _showCategoryDialog,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue.shade500,
+              const SizedBox(height: 20),
+              const Text('Transaction Type',
+                  style: TextStyle(
+                      fontSize: 16, color: CupertinoColors.systemGrey)),
+              GestureDetector(
+                onTap: () => _showTransactionTypeDialog(),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 12.0),
+                  decoration: const BoxDecoration(
+                    border: Border(
+                        bottom: BorderSide(color: CupertinoColors.systemGrey3)),
                   ),
-                  child: Text(
-                    selectedCategory ?? 'Add Category',
-                    style: const TextStyle(color: Colors.white),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                ElevatedButton(
-                  onPressed: _showTransactionTypeDialog,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue.shade500,
-                  ),
-                  child: Text(
-                    transactionType,
-                    style: const TextStyle(color: Colors.white),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(transactionType),
+                      const Icon(CupertinoIcons.chevron_down,
+                          color: CupertinoColors.systemGrey),
+                    ],
                   ),
                 ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            Center(
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue.shade500,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                onPressed: () async {
-                  final amount = double.tryParse(amountController.text);
-                  final notes = notesController.text;
-                  debugPrint("selectedCategory: $selectedCategory");
-                  final typeStr = selectedCategory?.toLowerCase() ?? "other";
-                  debugPrint("transactionType: $typeStr");
-                  final transType = stringToTransType(typeStr);
-                  debugPrint("transactionType: $transType");
-                  final date = selectedDate ?? DateTime.now();
+              ),
+              const Spacer(),
+              SizedBox(
+                width: double.infinity,
+                child: CupertinoButton.filled(
+                  onPressed: () {
+                    if (amountController.text.isEmpty ||
+                        selectedCategory == null) {
+                      _showValidationError(
+                          'Please fill in all required fields');
+                      return;
+                    }
 
-                  if (amount == null || notes.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content: Text("Please fill in all fields")),
+                    final double amount =
+                        double.tryParse(amountController.text) ?? 0.0;
+                    // For withdraw, amount should be positive in display but negative in data
+                    final double finalAmount =
+                        transactionType == 'Withdraw' ? amount : amount;
+
+                    // Convert the selected category string to TransactionType enum
+                    final TransactionType transType =
+                        stringToTransType(selectedCategory!);
+
+                    // Create a new transaction object
+                    final newTrans = Trans(
+                      transName: notesController.text,
+                      transactionDate: selectedDate ?? DateTime.now(),
+                      amount: finalAmount,
+                      transType: transType,
                     );
-                    return;
-                  }
 
-                  final trans = Trans.withType(
-                    transName: notes,
-                    transactionDate: date,
-                    amount: amount,
-                    transType: transType,
-                  );
+                    // Add to the list via the provider
+                    Provider.of<TransList>(context, listen: false)
+                        .addTransaction(newTrans);
 
-                  trans.saveToDB(); // inserts into SQLite
-                  TransList().addTransaction(trans); // add to in-memory session
-                  trans.voteCategory(); // Vote for the category in Firestore
-                  debugPrint("==== Current TransList Transactions ====");
-                  for (var t in TransList().transactions) {
-                    debugPrint(t.toString());
-                  }
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Transaction saved")),
-                  );
-                },
-                child: const Text(
-                  'Save Transaction',
-                  style: TextStyle(color: Colors.white),
+                    // Navigate back
+                    Navigator.pop(context);
+                  },
+                  child: const Text('Save Transaction'),
                 ),
-              ),
-            ),
-          ],
+              )
+            ],
+          ),
         ),
+      ),
+    );
+  }
+
+  void _showValidationError(String message) {
+    showCupertinoDialog(
+      context: context,
+      builder: (BuildContext context) => CupertinoAlertDialog(
+        title: const Text('Error'),
+        content: Text(message),
+        actions: <CupertinoDialogAction>[
+          CupertinoDialogAction(
+            isDefaultAction: true,
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
       ),
     );
   }
