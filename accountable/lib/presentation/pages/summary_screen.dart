@@ -42,9 +42,13 @@ class BudgetSummaryScreen extends StatelessWidget {
     final transList = Provider.of<TransList>(context);
     final insights = transList.generateInsights();
 
-    final chartData = insights.entries.map((entry) {
-      return {'category': transTypeToString(entry.key), 'amount': entry.value};
+   final chartData = insights.entries
+    .where((entry) => entry.value > 0)
+    .map((entry) => {
+      'category': transTypeToString(entry.key),
+      'amount': entry.value,
     }).toList();
+
 
     final insightListTiles =
         insights.entries.where((entry) => entry.value > 0).map((entry) {

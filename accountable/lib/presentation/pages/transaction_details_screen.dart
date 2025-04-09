@@ -28,7 +28,7 @@ class TransactionDetailScreen extends StatelessWidget {
       case TransactionType.other:
       default:
         return CupertinoIcons.square_grid_2x2;
-    }
+    } 
   }
 
   // Helper function to get string representation of transaction type

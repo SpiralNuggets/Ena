@@ -169,24 +169,25 @@ class TransList extends ChangeNotifier {
   }
 
   void getTransactionsFromDB() async {
-    // get the transactions from the local database
-    final db = LocalDB();
-    List<Map<String, dynamic>> dbTransactions = await db.getTransactions();
+  // Skip SQLite access during Flutter widget tests
+  const isTest = bool.fromEnvironment('FLUTTER_TEST');
+  if (isTest) return;
 
-    transactions
-        .clear(); // Clear before loading to avoid duplicates if called multiple times
-    for (Map<String, dynamic> dbTrans in dbTransactions) {
-      transactions.add(Trans.withType(
-        transName: dbTrans['transName'],
-        transactionDate: DateTime.parse(
-            dbTrans['transactionDate']), // PLEASE SAVE IT AS ISO 8601
-        amount: dbTrans['amount'],
-        transType:
-            stringToTransType(dbTrans['transType'].toString().toLowerCase()),
-      ));
-    }
-    notifyListeners();
+  final db = LocalDB();
+  List<Map<String, dynamic>> dbTransactions = await db.getTransactions();
+
+  transactions.clear();
+  for (Map<String, dynamic> dbTrans in dbTransactions) {
+    transactions.add(Trans.withType(
+      transName: dbTrans['transName'],
+      transactionDate: DateTime.parse(dbTrans['transactionDate']),
+      amount: dbTrans['amount'],
+      transType: stringToTransType(dbTrans['transType'].toString().toLowerCase()),
+    ));
   }
+  notifyListeners();
+}
+
 }
 
 class DailyTransList {
