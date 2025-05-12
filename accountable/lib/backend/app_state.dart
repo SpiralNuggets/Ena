@@ -1,11 +1,15 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:flutter/material.dart'; // PROVIDER REQUIRES MATERIAL???? WHY????
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // for the firebase stuff
-// import 'firebase_options.dart'; // for the firebase stuff
+import 'firebase_options.dart'; // for the firebase stuff
+import 'package:firebase_vertexai/firebase_vertexai.dart'; // gemini api
 
 FirebaseFirestore firebaseDB = FirebaseFirestore.instance;
 
+final llm = FirebaseVertexAI.instance
+    .generativeModel(model: 'gemini-2.5-flash-preview-04-17');
 
 class LocalDB {
   // if you touch this make sure to label the commit with BREAKING CHANGE
@@ -257,57 +261,14 @@ class Trans {
   }
 
   Future<void> generateCategory() async {
-    // Try to find a matching vendor and set the most likely category
-    debugPrint("[generateCategory] Starting for '$transName'");
-    try {
-      final querySnapshot = await firebaseDB.collection("vendors").get();
-      debugPrint(
-          "[generateCategory] Fetched ${querySnapshot.docs.length} vendors.");
-      String? bestVendorName;
-      Map<String, dynamic>? vendorData;
+    var response = await llm.generateContent(
+        [Content.text("Categorize this transaction: $transName")]);
 
-      // Find the vendor whose name is contained in the transaction name
-      for (var doc in querySnapshot.docs) {
-        final docData = doc.data();
-        final vendorName = docData["name"] as String?;
-        if (vendorName != null &&
-            transName.toLowerCase().contains(vendorName.toLowerCase())) {
-          bestVendorName = vendorName;
-          vendorData = docData;
-          debugPrint(
-              "[generateCategory] Found matching vendor '$vendorName' for '$transName'");
-          break; // Found a match, stop searching
-        }
-      }
-
-      if (vendorData != null && vendorData.containsKey("votes")) {
-        final votesDynamic = vendorData["votes"] as Map<String, dynamic>? ?? {};
-        final Map<String, int> categories = votesDynamic
-            .map((key, value) => MapEntry(key, (value as num?)?.toInt() ?? 0));
-        debugPrint("[generateCategory] Vendor votes: $categories");
-
-        if (categories.isNotEmpty) {
-          final sortedCategories = categories.entries.toList()
-            ..sort((a, b) => b.value.compareTo(a.value)); // Sort descending
-
-          final winningCategory = sortedCategories.first.key.toLowerCase();
-          transType = stringToTransType(winningCategory);
-          debugPrint(
-              "[generateCategory] Generated category for '$transName': ${transTypeToString(transType)} (from $winningCategory)");
-          return;
-        }
-      } else {
-        debugPrint(
-            "[generateCategory] No matching vendor found or vendor has no 'votes' field for '$transName'.");
-      }
-      // If no vendor match or no votes, keep default or current type (often 'other')
-      debugPrint(
-          "[generateCategory] Could not generate category for '$transName', defaulting to ${transTypeToString(transType)}");
-    } catch (e, s) {
-      debugPrint(
-          "[generateCategory] Error generating category for '$transName': $e\nStack trace: $s");
-      // Keep default type on error
+    if (response.isError) {
+      debugPrint("[generateCategory] Error: ${response.error}");
+      return;
     }
+    final category = response.text.trim().toLowerCase();
   }
 
   Future<void> voteCategory() async {
