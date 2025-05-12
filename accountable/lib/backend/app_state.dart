@@ -6,9 +6,7 @@ import 'package:cloud_firestore/cloud_firestore.dart'; // for the firebase stuff
 
 FirebaseFirestore firebaseDB = FirebaseFirestore.instance;
 
-// stolen from Mafuyu. Shut up.
-// half the codebase is shared between Kanade and Mafuyu anyways.
-// If there's an another version, it's gonna be called Ena or Mizuki or something.
+
 class LocalDB {
   // if you touch this make sure to label the commit with BREAKING CHANGE
   static final LocalDB _instance = LocalDB._internal(); // this shi a singleton
