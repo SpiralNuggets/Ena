@@ -234,6 +234,7 @@ class Trans {
   final String transName;
   final DateTime transactionDate;
   final double amount;
+  var image = null; // TODO: how are we gonna add the image, then? must be a type of File
   TransactionType transType = TransactionType.other;
 
   Trans({
@@ -260,15 +261,23 @@ class Trans {
     return 'Transaction{transName: $transName, transactionDate: $transactionDate, amount: $amount, transType: $transType}';
   }
 
+
+
   Future<void> generateCategory() async {
-    var response = await llm.generateContent(
-        [Content.text("Categorize this transaction: $transName")]);
+    final image = this.image.readAsBytes();
+    final imagePart = InlineDataPart('image/jpeg', image);
+    final prompt = TextPart("""Given the image, select the single most fitting category from the following list. Output *only* the chosen category name.
+
+List: Food, Personal, Utility, Transportation, Health, Leisure, Other""");
+
+    var response = await llm.generateContent([Content.multi([prompt, imagePart])]);
 
     if (response.isError) {
       debugPrint("[generateCategory] Error: ${response.error}");
       return;
     }
     final category = response.text.trim().toLowerCase();
+    transType = stringToTransType(category);
   }
 
   Future<void> voteCategory() async {
